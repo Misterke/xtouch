@@ -128,10 +128,12 @@ def post_build_copy_ota_fw(version):
     subprocess.run(['cp', fw_bin_source, fw_bin_target])
 
 def post_build_merge_bin(version):
-
+	# Run if pyserial isn't found
+    #subprocess.run([ "python", "-m", "pip", "install", "--upgrade", "pyserial" ], cwd="./.pio/build/esp32dev")
     web_usb_fw = f"../../../../xtouch-bin/webusb/xtouch.web.{version}.bin"
+    # Modified to find esptool.py on my system
     esptool_cmd = [
-        'esptool.py',
+        'python', 'C:\\Users\\kurth\\.platformio\\packages\\tool-esptoolpy\\esptool.py',
         '--chip', 'ESP32',
         'merge_bin',
         '-o', web_usb_fw,
@@ -141,25 +143,34 @@ def post_build_merge_bin(version):
         '0x8000', 'partitions.bin',
         '0x10000', 'firmware.bin'
     ]
-
+    print(f"TRYING TO RUN {esptool_cmd}")
     subprocess.run(esptool_cmd, cwd="./.pio/build/esp32dev")
+    print(f"FINISHED RUNNING {esptool_cmd}")
 
 
 def post_build_action(source, target, env):
+    print(f"XTOUCH POSTBUILD START")
 
     with open("version.json", "r") as version_file:
         version_data = json.load(version_file)
         version_value = version_data.get("version", "UNKNOWN")
 
+    print(f"XTOUCH POSTBUILD 1")
     delete_bin_files("../xtouch-bin/ota")
+    print(f"XTOUCH POSTBUILD 2")
     delete_bin_files("../xtouch-bin/webusb")
+    print(f"XTOUCH POSTBUILD 3")
     post_build_manifest(version_value)
+    print(f"XTOUCH POSTBUILD 4")
     post_build_copy_ota_fw(version_value)
+    print(f"XTOUCH POSTBUILD 5")
     post_build_create_ota_json(version_value)
+    print(f"XTOUCH POSTBUILD 6")
     post_build_merge_bin(version_value)
+    print(f"XTOUCH POSTBUILD 7")
 
     post_build_increment_semver("version.json", bump_type="patch")
-    print(f"XTOUCH POSTBUILD")
+    print(f"XTOUCH POSTBUILD END")
 
 
 env.AddPostAction("buildprog", post_build_action)

@@ -53,8 +53,9 @@ const getKeyValueLengthH = (root, varName) => {
     return `extern int ${varName};`;
 }
 
-
+console.log('[xtouch error downloader] fetching ' + url);
 https.get(url, (response) => {
+    console.log('[xtouch error downloader] response code ' + response.statusCode);
     if (response.statusCode === 200) {
         let data = '';
 

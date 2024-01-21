@@ -16,9 +16,8 @@ def is_pio_build():
         return False
     return not env.IsIntegrationDump()
 
-
 if is_pio_build() == True:
     print(f"XTOUCH PREBUILD")
-    result = subprocess.run(['node', 'scripts/download-errors.js'],
-                            text=True, check=True, capture_output=True)
-    print(result.stdout)
+    #subprocess.run(['node', 'scripts/download-errors.js'],
+    #               text=True, check=True)
+    print(f"XTOUCH END PREBUILD")
