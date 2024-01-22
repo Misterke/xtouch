@@ -9,6 +9,9 @@
 #define SD_CS 5
 
 #define LCD_BACK_LIGHT_PIN 21
+#define BACKLED_RED_PIN 4
+#define BACKLED_GREEN_PIN 16
+#define BACKLED_BLUE_PIN 17
 
 // use first channel of 16 channels (started from zero)
 #define LEDC_CHANNEL_0 0
@@ -47,14 +50,26 @@ void xtouch_screen_setBrightness(byte brightness)
     xtouch_screen_ledcAnalogWrite(LEDC_CHANNEL_0, brightness);
 }
 
-void xtouch_screen_setBackLedOff()
+void xtouch_screen_setupBackLed()
 {
-    pinMode(4, OUTPUT);
-    pinMode(16, OUTPUT);
-    pinMode(17, OUTPUT);
-    digitalWrite(4, HIGH);
-    digitalWrite(16, HIGH);
-    digitalWrite(17, HIGH); // The LEDs are "active low", meaning HIGH == off, LOW == on
+    //  For the RGB LED we use LEDC channels 1 to 3 and
+    //  and the same 12 bit timer and base frequency as
+    //  for the backlight.
+    ledcSetup(1, LEDC_BASE_FREQ, LEDC_TIMER_12_BIT);
+    ledcSetup(2, LEDC_BASE_FREQ, LEDC_TIMER_12_BIT);
+    ledcSetup(3, LEDC_BASE_FREQ, LEDC_TIMER_12_BIT);
+    ledcAttachPin(BACKLED_RED_PIN, 1);
+    ledcAttachPin(BACKLED_GREEN_PIN, 2);
+    ledcAttachPin(BACKLED_BLUE_PIN, 3);
+}
+
+void xtouch_screen_setBackLed(byte r, byte g, byte b)
+{
+    //  As the LEDs are active low, we need to invert
+    //  the duty cycle!
+    xtouch_screen_ledcAnalogWrite(1, 255-r);
+    xtouch_screen_ledcAnalogWrite(2, 255-g);
+    xtouch_screen_ledcAnalogWrite(3, 255-b);
 }
 
 void xtouch_screen_wakeUp()
@@ -151,7 +166,7 @@ void xtouch_screen_touchRead(lv_indev_drv_t *indev_driver, lv_indev_data_t *data
         // dont pass first touch after power on
         if (xtouch_screen_touchFromPowerOff)
         {
-            xtouch_screen_wakeUp();
+            xtouch_screen_wakeUp(); 
             while (x_touch_touchScreen.touched())
                 ;
             return;
@@ -182,7 +197,8 @@ void xtouch_screen_setup()
     digitalWrite(TFT_CS, HIGH);     // TFT screen chip select
     digitalWrite(SD_CS, HIGH);      // SD card chips select, must use GPIO 5 (ESP32 SS)
 
-    xtouch_screen_setBackLedOff();
+    xtouch_screen_setupBackLed();
+    xtouch_screen_setBackLed(0,0,0);
 
     lv_init();
 

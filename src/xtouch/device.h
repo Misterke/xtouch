@@ -43,6 +43,20 @@ void xtouch_device_set_print_state(String state)
     else if (state == "FAILED")
         bambuStatus.print_status = XTOUCH_PRINT_STATUS_FAILED;
 
+    if (lastPrintState != state)
+    {
+        const uint32_t stateColors[] = {
+            0x000000,   // XTOUCH_PRINT_STATUS_IDLE
+            0xFFFF00,   // XTOUCH_PRINT_STATUS_RUNNING
+            0x0000FF,   // XTOUCH_PRINT_STATUS_PAUSED
+            0x00FF00,   // XTOUCH_PRINT_STATUS_FINISHED
+            0x888844,   // XTOUCH_PRINT_STATUS_PREPARE
+            0xFF0000    // XTOUCH_PRINT_STATUS_FAILED
+        };
+        uint32_t color = stateColors[bambuStatus.print_status];
+        xtouch_screen_setBackLed((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF);
+    }
+
     if (lastPrintState != state && xTouchConfig.xTouchWakeOnPrint && state != "IDLE" && state != "FINISH" && state != "FAILED")
     {
         xtouch_screen_wakeUp();
