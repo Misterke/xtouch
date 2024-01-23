@@ -590,8 +590,8 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
             incomingJson["print"].containsKey("spd_lvl") ||
             incomingJson["print"].containsKey("spd_mag"))
         {
-
             xtouch_mqtt_sendMsg(XTOUCH_ON_PRINT_STATUS);
+            xtouch_screen_updateBackLed();
         }
     }
 }

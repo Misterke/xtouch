@@ -72,6 +72,29 @@ void xtouch_screen_setBackLed(byte r, byte g, byte b)
     xtouch_screen_ledcAnalogWrite(3, 255-b);
 }
 
+void xtouch_screen_updateBackLed()
+{
+    const uint8_t stateColors[][3] = {
+        {0x00,0x00,0x00},   // XTOUCH_PRINT_STATUS_IDLE
+        {0xFF,0xFF,0x00},   // XTOUCH_PRINT_STATUS_RUNNING
+        {0x88,0x00,0xFF},   // XTOUCH_PRINT_STATUS_PAUSED
+        {0x00,0xFF,0x00},   // XTOUCH_PRINT_STATUS_FINISHED
+        {0xFF,0xFF,0x88},   // XTOUCH_PRINT_STATUS_PREPARE
+        {0xFF,0x00,0x00}    // XTOUCH_PRINT_STATUS_FAILED
+    };
+    uint8_t r = stateColors[bambuStatus.print_status][0];
+    uint8_t g = stateColors[bambuStatus.print_status][1];
+    uint8_t b = stateColors[bambuStatus.print_status][2];
+    if (bambuStatus.print_status == XTOUCH_PRINT_STATUS_RUNNING) {
+        //  Red component goes down as print goes towards 100%
+        uint32_t v = (bambuStatus.mc_print_percent * 255 / 100);
+        if (v > 255) v = 255;
+        g = (uint8_t)v;
+    }
+    //  Dim the LED a bit ...
+    xtouch_screen_setBackLed(r, g, b);
+}
+
 void xtouch_screen_wakeUp()
 {
     lv_timer_reset(xtouch_screen_onScreenOffTimer);
