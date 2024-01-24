@@ -30,7 +30,9 @@ extern "C"
 #include "ui_events.h"
 
   lv_timer_t *xtouch_screen_onScreenOffTimer;
+  lv_timer_t *xtouch_screen_onBackLEDTimer;
   lv_timer_t *xtouch_ssdp_onButtonTimerTimer;
+
   // SCREEN: ui_controlScreen
   void ui_introScreen_screen_init(void);
   void ui_homeScreen_screen_init(void);

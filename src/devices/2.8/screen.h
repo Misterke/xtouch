@@ -35,11 +35,12 @@ TFT_eSPI tft = TFT_eSPI(screenWidth, screenHeight); /* TFT instance */
 #include "xtouch/globals.h"
 
 bool xtouch_screen_touchFromPowerOff = false;
+uint16_t xtouch_screen_ledTicks = 0;
 
 void xtouch_screen_ledcAnalogWrite(uint8_t channel, uint32_t value, uint32_t valueMax = 255)
 {
     // calculate duty, 4095 from 2 ^ 12 - 1
-    uint32_t duty = (4095 / valueMax) * min(value, valueMax);
+    uint32_t duty = 4095 * min(value, valueMax) / valueMax;
 
     // write duty to LEDC
     ledcWrite(channel, duty);
@@ -48,6 +49,44 @@ void xtouch_screen_ledcAnalogWrite(uint8_t channel, uint32_t value, uint32_t val
 void xtouch_screen_setBrightness(byte brightness)
 {
     xtouch_screen_ledcAnalogWrite(LEDC_CHANNEL_0, brightness);
+}
+
+void xtouch_screen_setBackLed(byte r, byte g, byte b)
+{
+    //  As the LEDs are active low, we need to invert
+    //  the duty cycle!
+    xtouch_screen_ledcAnalogWrite(1, 255-r);
+    xtouch_screen_ledcAnalogWrite(2, 255-g);
+    xtouch_screen_ledcAnalogWrite(3, 255-b);
+}
+
+void xtouch_screen_updateBackLed()
+{
+    const uint8_t stateColors[][7] = {
+        {0xFF,0xFF,0xFF,0x00,0x00,0x00,0x3F},   // XTOUCH_PRINT_STATUS_IDLE
+        {0xFF,0xFF,0x00,0xFF,0xFF,0x00,0x01},   // XTOUCH_PRINT_STATUS_RUNNING
+        {0x88,0x00,0xFF,0xFF,0xFF,0x00,0x04},   // XTOUCH_PRINT_STATUS_PAUSED
+        {0x00,0x00,0x00,0x00,0xFF,0x00,0x03},   // XTOUCH_PRINT_STATUS_FINISHED
+        {0xFF,0xFF,0x88,0x00,0x00,0x00,0x01},   // XTOUCH_PRINT_STATUS_PREPARE
+        {0x00,0x00,0x00,0xFF,0x00,0x00,0x03}    // XTOUCH_PRINT_STATUS_FAILED
+    };
+    int offset = (xtouch_screen_ledTicks & stateColors[bambuStatus.print_status][6]) ? 3 : 0;
+    uint8_t r = stateColors[bambuStatus.print_status][offset];
+    uint8_t g = stateColors[bambuStatus.print_status][offset+1];
+    uint8_t b = stateColors[bambuStatus.print_status][offset+2];
+    if (!offset && (bambuStatus.print_status == XTOUCH_PRINT_STATUS_RUNNING)) {
+        //  Red component goes down as print goes towards 100%
+        uint32_t v = (bambuStatus.mc_print_percent * 255 / 100);
+        if (v > 255) v = 255;
+        r = (uint8_t)(255-v);
+    }
+    xtouch_screen_setBackLed(r, g, b);
+}
+
+void xtouch_screen_onBackLedTimeout(lv_timer_t *timer)
+{
+    xtouch_screen_ledTicks++;
+    xtouch_screen_updateBackLed();
 }
 
 void xtouch_screen_setupBackLed()
@@ -63,36 +102,10 @@ void xtouch_screen_setupBackLed()
     ledcAttachPin(BACKLED_BLUE_PIN, 3);
 }
 
-void xtouch_screen_setBackLed(byte r, byte g, byte b)
+void xtouch_screen_setupBackLedTimer()
 {
-    //  As the LEDs are active low, we need to invert
-    //  the duty cycle!
-    xtouch_screen_ledcAnalogWrite(1, 255-r);
-    xtouch_screen_ledcAnalogWrite(2, 255-g);
-    xtouch_screen_ledcAnalogWrite(3, 255-b);
-}
-
-void xtouch_screen_updateBackLed()
-{
-    const uint8_t stateColors[][3] = {
-        {0x00,0x00,0x00},   // XTOUCH_PRINT_STATUS_IDLE
-        {0xFF,0xFF,0x00},   // XTOUCH_PRINT_STATUS_RUNNING
-        {0x88,0x00,0xFF},   // XTOUCH_PRINT_STATUS_PAUSED
-        {0x00,0xFF,0x00},   // XTOUCH_PRINT_STATUS_FINISHED
-        {0xFF,0xFF,0x88},   // XTOUCH_PRINT_STATUS_PREPARE
-        {0xFF,0x00,0x00}    // XTOUCH_PRINT_STATUS_FAILED
-    };
-    uint8_t r = stateColors[bambuStatus.print_status][0];
-    uint8_t g = stateColors[bambuStatus.print_status][1];
-    uint8_t b = stateColors[bambuStatus.print_status][2];
-    if (bambuStatus.print_status == XTOUCH_PRINT_STATUS_RUNNING) {
-        //  Red component goes down as print goes towards 100%
-        uint32_t v = (bambuStatus.mc_print_percent * 255 / 100);
-        if (v > 255) v = 255;
-        g = (uint8_t)v;
-    }
-    //  Dim the LED a bit ...
-    xtouch_screen_setBackLed(r, g, b);
+    xtouch_screen_onBackLEDTimer = lv_timer_create(xtouch_screen_onBackLedTimeout, 200, NULL);
+    lv_timer_resume(xtouch_screen_onBackLEDTimer);
 }
 
 void xtouch_screen_wakeUp()

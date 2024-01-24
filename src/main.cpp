@@ -61,6 +61,7 @@ void setup()
   xtouch_firmware_checkOnlineFirmwareUpdate();
 
   xtouch_screen_setupScreenTimer();
+  xtouch_screen_setupBackLedTimer();
   xtouch_setupGlobalEvents();
   xtouch_pair_check();
   xtouch_mqtt_setup();
