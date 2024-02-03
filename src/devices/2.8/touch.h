@@ -138,14 +138,14 @@ void xtouch_touch_setup()
         tft.drawFastHLine(300, 230, 20, ILI9341_BLACK);
         tft.drawFastVLine(310, 220, 20, ILI9341_BLACK);
 
-        int16_t xDist = 320 - 40;
-        int16_t yDist = 240 - 40;
+        int16_t xDist = 320 - 20;
+        int16_t yDist = 240 - 20;
 
         x_touch_touchConfig.xCalM = (float)xDist / (float)(x2 - x1);
-        x_touch_touchConfig.xCalC = 20.0 - ((float)x1 * x_touch_touchConfig.xCalM);
+        x_touch_touchConfig.xCalC = 10.0 - ((float)x1 * x_touch_touchConfig.xCalM);
         // y
         x_touch_touchConfig.yCalM = (float)yDist / (float)(y2 - y1);
-        x_touch_touchConfig.yCalC = 20.0 - ((float)y1 * x_touch_touchConfig.yCalM);
+        x_touch_touchConfig.yCalC = 10.0 - ((float)y1 * x_touch_touchConfig.yCalM);
 
         xtouch_saveTouchConfig(x_touch_touchConfig);
 
