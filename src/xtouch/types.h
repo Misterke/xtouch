@@ -1,7 +1,7 @@
 #ifndef _XLCD_TYPES
 #define _XLCD_TYPES
 
-#define XTOUCH_LCD_MIN_SLEEP_TIME 5
+#define XTOUCH_LCD_MIN_SLEEP_TIME 1
 
 #ifdef __cplusplus
 extern "C"
